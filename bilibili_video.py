@@ -66,7 +66,7 @@ class bilibili_video(Plugin):
                 response = session.get(url=url, params=params)
                 json_data = response.json()
                 logger.info(json_data)
-                if json_data['code'] == 200:
+                if json_data['状态'] == 200:
                     text = json_data['数据']['视频']['地址']
                     return text
                 else:
