@@ -30,7 +30,7 @@ class bilibili_video(Plugin):
             return
         query: str = e_context["context"].content.strip()
 
-        if query.startswith(f"获取B站"):
+        if query.startswith(f"解析B站") or query.startswith(f"解析b站"):
             msg = query.replace("获取B站", "")
             msg = msg.strip()
             logger.info(f"[{__class__.__name__}] 收到消息: {msg}")
@@ -62,6 +62,8 @@ class bilibili_video(Plugin):
                 url = BASE_LINHUN_URL + "/api/blblvi"
                 logger.info(f"接口url:{url}")
                 match = re.search(r'https://[^\s]+', msg)
+                if "https://b23.tv/" in match.group(0):
+                    match = self.get_real_url(match)
                 params = f"url={match}&apiKey={self.config_data['bilibili_video_key']}"
                 response = session.get(url=url, params=params)
                 json_data = response.json()
@@ -110,3 +112,18 @@ class bilibili_video(Plugin):
         reply = Reply(type, content)
         channel = e_context["channel"]
         channel.send(reply, e_context["context"])
+
+    def get_real_url(self, url):
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+            }
+            with Session() as session:
+                response = session.get(url, headers=headers)
+                if response.status_code == 200:
+                    return response.url
+                else:
+                    print("无法下载视频文件")
+                    return None
+        except Exception as e:
+            return None
