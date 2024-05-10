@@ -82,39 +82,29 @@ class bilibili_video(Plugin):
     def save_tempfile(self, url, e_context, video_name):
         logger.info("开始下载视频文件...{}".format(url))
         try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+            }
             with Session() as session:
-                response = session.get(url)
+                response = session.get(url, headers=headers)
                 logger.info("下载结束...")
-                # 检查请求是否成功
-                if response != None:
-                    # 获取文件名和扩展名
+                if response.status_code == 200:
                     file_name, file_ext = os.path.splitext(urlparse(url).path)
-                    # file_name = file_name.replace(" ", "")
-                    # file_ext = file_ext.replace(" ", "")
-                    # file_ext = file_ext.replace(".mp4", "")
-                    final_file_name = file_name + file_ext
+                    final_file_name = video_name + file_ext
                     logger.info(f"文件名：{final_file_name}")
-                    with tempfile.NamedTemporaryFile(
-                        prefix=video_name + ".", suffix=file_ext, delete=False
-                    ) as f:
-                        # 写入临时文件
+                    with tempfile.NamedTemporaryFile(prefix=video_name + ".", suffix=file_ext, delete=False) as f:
                         f.write(response.content)
-                        # 获取临时文件的路径
                         temp_file_path = f.name
-
-                    logger.info("file: {}".format(temp_file_path))
-                    print(f"视频文件已保存到临时文件: {temp_file_path}")
-                    self._send_info(e_context, temp_file_path, ReplyType.VIDEO)
-                    return
+                        logger.info("视频文件已保存到临时文件file: {}".format(temp_file_path))
+                        self._send_info(e_context, temp_file_path, ReplyType.VIDEO)
+                    return temp_file_path
                 else:
                     print("无法下载视频文件")
                     self._send_info(e_context, url, ReplyType.TEXT)
-                    return
+                    return None
         except Exception as e:
-            logger.error(f"接口抛出异常:{e}")
+            logger.error(f"下载视频文件时发生异常:{e}")
             return None
-        finally:
-            session.close()
 
     def _send_info(self, e_context: EventContext, content: str, type):
         reply = Reply(type, content)
